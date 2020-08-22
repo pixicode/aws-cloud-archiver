@@ -1,0 +1,6 @@
+
+.vscode/
+
+cloud_archiver.egg-info/
+
+*.pyc
