@@ -17,17 +17,38 @@ def setup_module():
 
 
 def teardown_module():
-    # shutil.rmtree(OUTPUT_PATH)
+    shutil.rmtree(OUTPUT_PATH)
     pass
 
 
 def test_cloud_archiver():
     archiver = CloudArchiver()
     print("Testing cloud archiver")
+
+    # Generate some files in the base directory.
     generate_test_files(5, SAMPLE_DATA_PATH)
     generate_test_files(5, SAMPLE_DATA_PATH, 3)
-    archiver.archive(SAMPLE_DATA_PATH, ARCHIVE_PATH)
+
+    # Generate a directory with some files.
+    # This should NOT be archived.
+    test_dir_1 = generate_directory(SAMPLE_DATA_PATH, "test_dir_1")
+    generate_test_files(4, test_dir_1)
+    generate_test_files(1, test_dir_1, 6)  # Even though these are old, the folder was touched recently.
+
+    # Generate a directory. This one has no files, but has a nested dir with some old files.
+    # These should be archived.
+    test_dir_2 = generate_directory(SAMPLE_DATA_PATH, "test_dir_2")
+    nested_dir_1 = generate_directory(test_dir_2, "nested_dir_1")
+    generate_test_files(2, nested_dir_1, 6)
+
+    archiver.archive("test-archive", SAMPLE_DATA_PATH, ARCHIVE_PATH)
     pass
+
+
+def generate_directory(root_path: str, directory_name: str):
+    directory_path = os.path.join(root_path, directory_name)
+    os.makedirs(directory_path, exist_ok=True)
+    return directory_path
 
 
 def generate_test_files(n: int, root_path: str, days_old: int = 0):
