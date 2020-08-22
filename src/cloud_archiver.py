@@ -11,16 +11,17 @@ import boto3
 class CloudArchiver():
 
     SECONDS_PER_DAY = 86400
+    ARCHIVE_S3_BUCKET_NAME = "pixi-cloud-archive"
+    ARCHIVE_LOG_FILE = "archive.log"
 
     def __init__(self):
         self.access_threshold_days: int = 1
-        pass
 
     def archive(self, archive_name: str, root_path: str, archive_path: str):
         shortlist = self._shortlist_archive_directory(root_path)
         archive_items = self._move_to_archive(shortlist, archive_path)
         self._move_files_to_s3(archive_name, archive_items)
-        pass
+        self._generate_archive_log(archive_name, root_path, archive_items)
 
     def _shortlist_archive_directory(self, root_path: str):
 
@@ -139,18 +140,29 @@ class CloudArchiver():
         # Upload everything under archive_path to S3.
 
         s3_client = boto3.client('s3')
-        bucket_name = "pixi-cloud-archive"
-        s3_client.create_bucket(Bucket=bucket_name)
+        s3_client.create_bucket(Bucket=self.ARCHIVE_S3_BUCKET_NAME)
 
         try:
             for key, path in archive_items:
                 key_with_prefix = f"{key_prefix}/{key}" 
                 print(f"Uploading: {key_with_prefix}")
-                s3_client.upload_file(path, bucket_name, key_with_prefix)
+                s3_client.upload_file(path, self.ARCHIVE_S3_BUCKET_NAME, key_with_prefix)
             return True
         except Exception as e:
             print(f"Error uploading to S3: {e}")
             return False
+
+    def _generate_archive_log(self, archive_name: str, root_path: str, archive_items: list):
+        # No items archived
+        if len(archive_items) == 0:
+            return
+
+        date_str = datetime.now().isoformat()
+        message = f"[{date_str}] {archive_name}: {len(archive_items)} items archived from {root_path}."
+        print(message)
+
+        with open(self.ARCHIVE_LOG_FILE, "a") as f:
+            f.writelines(message + "\n")
 
 
 def main():

@@ -13,12 +13,10 @@ def setup_module():
     os.makedirs(OUTPUT_PATH, exist_ok=True)
     os.makedirs(SAMPLE_DATA_PATH, exist_ok=True)
     os.makedirs(ARCHIVE_PATH, exist_ok=True)
-    pass
 
 
 def teardown_module():
     shutil.rmtree(OUTPUT_PATH)
-    pass
 
 
 def test_cloud_archiver():
